@@ -1,4 +1,5 @@
 data "aws_ami" "app_ami" {
+  count = 0
   most_recent = true
 
   filter {
