@@ -79,8 +79,7 @@ module "alb" {
   ]
 
   tags = {
-    Environment = "Development"
-    Project     = "Example"
+    Environment = "Dev"
   }
 }
 module "blog_sg" {
