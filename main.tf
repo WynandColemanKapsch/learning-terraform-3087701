@@ -48,13 +48,23 @@ resource "aws_instance" "blog" {
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "9.17.0"
+  version = "4.0.0" # Last known version compatible with Terraform v0.12-v1.2
 
   name               = "blog-alb"
+  load_balancer_type = "application"
   vpc_id             = module.blog_vpc.vpc_id
   subnets            = module.blog_vpc.public_subnets
   security_groups    = [module.blog_sg.security_group_id]
-  load_balancer_type = "application"
+
+  target_groups = [
+    {
+      name_prefix      = "blog-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
+      target_id        = aws_instance.blog.id
+    }
+  ]
 
   listeners = [
     {
@@ -63,25 +73,8 @@ module "alb" {
       target_group_index = 0
     }
   ]
-
-  target_groups = [
-    {
-      name_prefix      = "blog-"
-      backend_protocol = "HTTP"
-      backend_port     = 80
-      target_type      = "instance"
-      targets = [
-        {
-          target_id = aws_instance.blog.id
-        }
-      ]
-    }
-  ]
-
-  tags = {
-    Environment = "Dev"
-  }
 }
+
 module "blog_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.0"
