@@ -72,9 +72,18 @@ module "alb" {
     }
   }
 
+<<<<<<< HEAD
+  listeners = {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+  }
+  
+
+=======
+>>>>>>> c875359990699c2755f6a50722f1c1000353267c
   tags = {
-    Environment = "Development"
-    Project     = "Example"
+    Environment = "Dev"
   }
 }
 
