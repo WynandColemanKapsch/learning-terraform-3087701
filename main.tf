@@ -1,3 +1,18 @@
+terraform {
+  required_version = "= 1.12.2"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "eu-north-1"
+}
+
 data "aws_ami" "app_ami" {
   most_recent = true
 
@@ -14,109 +29,91 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-data "aws_vpc" "default"{
-  default = true
-}
-
 module "blog_vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "2.77.0"
 
   name = "dev"
   cidr = "10.0.0.0/16"
 
-  azs             = ["eu-north-1a", "eu-north-1b", "eu-north-1c"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  azs            = ["eu-north-1a", "eu-north-1b", "eu-north-1c"]
+  public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_dns_hostnames = true
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "dev"
   }
 }
 
-resource "aws_instance" "blog" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
+module "blog_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "3.17.0"
 
-  vpc_security_group_ids = [module.blog_sg.security_group_id]
+  name   = "blog-sg"
+  vpc_id = module.blog_vpc.vpc_id
 
-  subnet_id = module.blog_vpc.public_subnets[0]
+  ingress_rules       = ["http-80-tcp", "https-443-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 
-  tags = {
-    Name = "Learning Terraform"
-  }
-}
-
-module "autoscaling" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "9.0.1"
-  
-  name ="blog"
-  min_size = 1
-  max_size = 2
-
-  vpc_zone_identifier = module.blog_vpc.public_subnets
-  traffic_source_attachments = {
-    alb = {
-      traffic_source_arn = element(module.blog_alb.target_group_arns, 0)
-      type               = "elbv2"
-    }
-  }
-  security_groups = [module.blog_sg.security_group_id]
-
-  image_id = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 module "blog_alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "9.17.0"
+  version = "5.12.0"
 
-  vpc_id = module.blog_vpc.vpc_id
+  name               = "blog-alb"
+  load_balancer_type = "application"
 
-  load_balancers = {
-    blog = {
-      name               = "blog-alb"
-      internal           = false
-      load_balancer_type = "application"
-      subnets            = module.blog_vpc.public_subnets
-      security_groups    = [module.blog_sg.security_group_id]
+  subnets         = module.blog_vpc.public_subnets
+  vpc_id          = module.blog_vpc.vpc_id
+  security_groups = [module.blog_sg.security_group_id]
+
+  target_groups = [
+    {
+      name_prefix      = "blog-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
     }
-  }
+  ]
 
-  target_groups = {
-    blog = {
-      name_prefix = "blog-"
-      protocol    = "HTTP"
-      port        = 80
-      target_type = "instance"
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
     }
-  }
-
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-      forward = {
-        target_group_key = "blog"
-      }
-    }
-  }
+  ]
 
   tags = {
     Environment = "Dev"
   }
 }
 
-module "blog_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "5.3.0"
-  name    = "blog_new"
+module "autoscaling" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "4.1.0"
 
-  vpc_id      = module.blog_vpc.vpc_id
+  name                = "blog-asg"
+  min_size            = 1
+  max_size            = 2
+  desired_capacity    = 1
+  vpc_zone_identifier = module.blog_vpc.public_subnets
+  security_groups     = [module.blog_sg.security_group_id]
 
-  ingress_rules = ["http-80-tcp","https-443-tcp"]
-  ingress_cidr_blocks = ["0.0.0.0/0"]
+  launch_template = {
+    name_prefix   = "blog-launch"
+    image_id      = data.aws_ami.app_ami.id
+    instance_type = "t3.micro"
+  }
 
-  egress_rules = ["all-all"]
-  egress_cidr_blocks = ["0.0.0.0/0"]
+  target_group_arns = module.blog_alb.target_group_arns
+}
+
+output "alb_dns_name" {
+  value = module.blog_alb.dns_name
 }
