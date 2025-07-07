@@ -1,18 +1,3 @@
-terraform {
-  required_version = "= 1.12.2"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "eu-north-1"
-}
-
 data "aws_ami" "app_ami" {
   most_recent = true
 
