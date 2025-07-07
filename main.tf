@@ -58,7 +58,7 @@ module "alb" {
     {
       port                = 80
       protocol            = "http"
-      targer_group_index  = 0
+      target_group_index  = 0
     }
   }
   target_groups = {
