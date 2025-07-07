@@ -71,6 +71,8 @@ module "blog_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "9.17.0"
 
+  vpc_id = module.blog_vpc.vpc_id
+
   load_balancers = {
     blog = {
       name               = "blog-alb"
@@ -83,10 +85,10 @@ module "blog_alb" {
 
   target_groups = {
     blog = {
-      name_prefix   = "blog-"
-      protocol      = "HTTP"
-      port          = 80
-      target_type   = "instance"
+      name_prefix = "blog-"
+      protocol    = "HTTP"
+      port        = 80
+      target_type = "instance"
     }
   }
 
@@ -99,8 +101,6 @@ module "blog_alb" {
       }
     }
   }
-
-  vpc_id = module.blog_vpc.vpc_id
 
   tags = {
     Environment = "Dev"
