@@ -46,67 +46,7 @@ resource "aws_instance" "blog" {
   }
 }
 
-module "autoscaling" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "9.0.1"
-  
-  name ="blog"
-  min_size = 1
-  max_size = 2
 
-  vpc_zone_identifier = module.blog_vpc.public_subnets
-  traffic_source_attachments = {
-    alb = {
-      traffic_source_arn = element(module.blog_alb.target_group_arns, 0)
-      type               = "elbv2"
-    }
-  }
-  security_groups = [module.blog_sg.security_group_id]
-
-  image_id = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
-}
-
-module "blog_alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "9.17.0"
-
-  vpc_id  = module.blog_vpc.vpc_id
-
-  load_balancers = {
-    blog = {
-      name               = "blog-alb"
-      internal           = false
-      load_balancer_type = "application"
-      subnets            = module.blog_vpc.public_subnets
-      security_groups    = [module.blog_sg.security_group_id]
-    }
-  }
-
-  target_groups = {
-    blog = {
-      name_prefix = "blog-"
-      protocol    = "HTTP"
-      port        = 80
-      target_type = "instance"
-    }
-  }
-
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-      forward = {
-        target_group_key = "blog"
-      }
-    }
-  }
-
-  tags = {
-    Environment = "Dev"
-    Project     = "Blog"
-  }
-}
 
 
 module "blog_sg" {
