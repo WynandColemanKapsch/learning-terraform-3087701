@@ -56,10 +56,6 @@ module "alb" {
   subnets = module.blog_vpc.public_subnets
   security_groups = [module.blog_sg.security_group_id]
 
-  internal           = false
-  idle_timeout       = 60
-  enable_deletion_protection = false
-
   target_groups = [
     {
       name_prefix      = "blog"
