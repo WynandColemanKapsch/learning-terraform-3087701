@@ -54,13 +54,13 @@ module "alb" {
   subnets = module.blog_vpc.subnets
   security_groups = [module.blog_vpc.security_group_id]
 
-  listeners = {
+  listeners = [
     {
-      port     = 80
-      protocol = "HTTP"
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
     }
-
-  }
+  ]  
 
   target_groups = {
     ex-instance = {
@@ -71,14 +71,6 @@ module "alb" {
       target_id        = aws_instance.blog.id
     }
   }
-
-  listeners = [
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-    }
-  ]  
 
   tags = {
     Environment = "Dev"
