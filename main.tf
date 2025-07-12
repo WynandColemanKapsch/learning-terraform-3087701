@@ -76,6 +76,16 @@ module "blog_alb" {
   subnets            = module.blog_vpc.public_subnets
   security_groups    = [module.blog_sg.security_group_id]
 
+  listeners = {
+    http = {
+      port     = 80
+      protocol = "HTTP"
+      forward = {
+        target_group_key = "blog"
+      }
+    }
+  }
+
   target_groups = {
     blog = {
       name_prefix = "${var.environment.name}-"
@@ -85,37 +95,10 @@ module "blog_alb" {
     }
   }
 
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-      forward = {
-        target_group_key = "blog"
-      }
-    }
-  }
-
   tags = {
     Environment = var.environment.name
   }
 }
-
-  # Map of listener configurations
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-      forward = {
-        target_group_key = "blog"
-      }
-    }
-  }
-
-  tags = {
-    Environment = var.environment.name
-  }
-
-
 
 
 module "blog_sg" {
