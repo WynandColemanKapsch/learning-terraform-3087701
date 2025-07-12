@@ -49,23 +49,24 @@ resource "aws_instance" "blog" {
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.0.1"
-  
-  name ="${var.environment.name}-blog"
-  min_size = var.asg_min_size
-  max_size = var.asg_max_size
 
+  name                = "${var.environment.name}-blog-asg"
+  min_size            = var.asg_min_size
+  max_size            = var.asg_max_size
   vpc_zone_identifier = module.blog_vpc.public_subnets
+  security_groups     = [module.blog_sg.security_group_id]
+
   traffic_source_attachments = {
     alb = {
-      traffic_source_arn = element(module.blog_alb.target_group_arns, 0)
+      traffic_source_arn = module.blog_alb.target_groups["blog"].arn
       type               = "elbv2"
     }
   }
-  security_groups = [module.blog_sg.security_group_id]
 
-  image_id = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
+  image_id       = data.aws_ami.app_ami.id
+  instance_type  = var.instance_type
 }
+
 
 module "blog_alb" {
   source  = "terraform-aws-modules/alb/aws"
