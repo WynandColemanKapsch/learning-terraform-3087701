@@ -92,6 +92,7 @@ module "blog_alb" {
       name_prefix = "${var.environment.name}-"
       protocol    = "HTTP"
       port        = 80
+      create_attachment = false
       # NO 'target_type' or 'targets' here
     }
   }
