@@ -71,18 +71,16 @@ module "blog_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "9.17.0"
 
-  vpc_id  = module.blog_vpc.vpc_id
-
-  load_balancers = {
-    blog = {
-      name               = "${var.environment.name}-blog-alb"
-      internal           = false
-      load_balancer_type = "application"
-      subnets            = module.blog_vpc.public_subnets
-      security_groups    = [module.blog_sg.security_group_id]
-    }
+  # Use singular 'load_balancer' as an object
+  load_balancer = {  
+    name               = "${var.environment.name}-blog-alb"
+    internal           = false
+    load_balancer_type = "application"
+    subnets            = module.blog_vpc.public_subnets
+    security_groups    = [module.blog_sg.security_group_id]
   }
 
+  # Map of target groups
   target_groups = {
     blog = {
       name_prefix = "${var.environment.name}-"
@@ -92,6 +90,7 @@ module "blog_alb" {
     }
   }
 
+  # Map of listener configurations
   listeners = {
     http = {
       port     = 80
@@ -106,6 +105,7 @@ module "blog_alb" {
     Environment = var.environment.name
   }
 }
+
 
 
 module "blog_sg" {
