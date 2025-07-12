@@ -58,8 +58,8 @@ module "autoscaling" {
 
   traffic_source_attachments = {
     alb = {
-      traffic_source_arn = module.blog_alb.target_groups["blog"].arn
-      type               = "elbv2"
+      traffic_source_identifier = module.blog_alb.target_groups["blog"].arn
+      type                      = "elbv2"
     }
   }
 
