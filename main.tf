@@ -94,6 +94,10 @@ module "blog_alb" {
       }
     }
   }
+
+  tags = {
+    Environment = var.environment.name
+  }
 }
 
   # Map of listener configurations
@@ -110,7 +114,7 @@ module "blog_alb" {
   tags = {
     Environment = var.environment.name
   }
-}
+
 
 
 
