@@ -87,6 +87,15 @@ module "blog_alb" {
     }
   }
 
+  target_groups = {
+    blog = {
+      name_prefix = "${var.environment.name}-"
+      protocol    = "HTTP"
+      port        = 80
+      targets     = []
+    }
+  }
+
   tags = {
     Environment = var.environment.name
   }
